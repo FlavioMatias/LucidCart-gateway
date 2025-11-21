@@ -1,4 +1,4 @@
-package com.flavex.LucidCart
+package com.LucidCart
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

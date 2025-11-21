@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://orderservice.com/contract"
+           xmlns:tns="http://orderservice.com/contract"
+           elementFormDefault="qualified">
+
+    <!-- ==================== ENUMS ==================== -->
+    <xs:simpleType name="OrderStatus">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CREATED"/>
+            <xs:enumeration value="PROCESSING"/>
+            <xs:enumeration value="SHIPPED"/>
+            <xs:enumeration value="DELIVERED"/>
+            <xs:enumeration value="CANCELED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- ==================== COMPLEX TYPES ==================== -->
+    <xs:complexType name="ItemOrderSoap">
+        <xs:sequence>
+            <xs:element name="id" type="xs:long" minOccurs="0"/>
+            <xs:element name="productId" type="xs:long"/>
+            <xs:element name="orderId" type="xs:long"/>
+            <xs:element name="quantity" type="xs:long"/>
+            <xs:element name="unitPrice" type="xs:double"/>
+            <xs:element name="subtotal" type="xs:double"/>
+            <xs:element name="createdAt" type="xs:dateTime" minOccurs="0"/>
+            <xs:element name="updatedAt" type="xs:dateTime" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AddressSoap">
+        <xs:sequence>
+            <xs:element name="id" type="xs:long" minOccurs="0"/>
+            <xs:element name="userId" type="xs:long"/>
+            <xs:element name="fullAddress" type="xs:string"/>
+            <xs:element name="latitude" type="xs:double"/>
+            <xs:element name="longitude" type="xs:double"/>
+            <xs:element name="createdAt" type="xs:dateTime" minOccurs="0"/>
+            <xs:element name="updatedAt" type="xs:dateTime" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ItemOrderRequestSoap">
+        <xs:sequence>
+            <xs:element name="productId" type="xs:long"/>
+            <xs:element name="quantity" type="xs:long"/>
+            <xs:element name="unitPrice" type="xs:double"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AddressRequestSoap">
+        <xs:sequence>
+            <xs:element name="fullAddress" type="xs:string"/>
+            <xs:element name="latitude" type="xs:double"/>
+            <xs:element name="longitude" type="xs:double"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ItemOrderListSoap">
+        <xs:sequence>
+            <xs:element name="item" type="tns:ItemOrderSoap" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="OrderSoap">
+        <xs:sequence>
+            <xs:element name="id" type="xs:long"/>
+            <xs:element name="status" type="tns:OrderStatus"/>
+            <xs:element name="traceCode" type="xs:string"/>
+            <xs:element name="address" type="tns:AddressSoap"/>
+            <xs:element name="createdAt" type="xs:dateTime" minOccurs="0"/>
+            <xs:element name="updatedAt" type="xs:dateTime" minOccurs="0"/>
+            <xs:element name="items" type="tns:ItemOrderListSoap"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="OrderListSoap">
+        <xs:sequence>
+            <xs:element name="order" type="tns:OrderSoap" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- ==================== ORDER OPERATIONS ==================== -->
+    <xs:element name="AddItemRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="item" type="tns:ItemOrderRequestSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="AddItemResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="item" type="tns:ItemOrderSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="UpdateItemRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+                <xs:element name="item" type="tns:ItemOrderRequestSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="UpdateItemResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="item" type="tns:ItemOrderSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="DeleteItemRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DeleteItemResponse">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="DeleteOrderRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DeleteOrderResponse">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="FindOrderRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="FindOrderResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="order" type="tns:OrderSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ListOrdersRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="status" type="tns:OrderStatus" minOccurs="0"/>
+                <xs:element name="userId" type="xs:long" minOccurs="0"/>
+                <xs:element name="orderId" type="xs:long" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="ListOrdersResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="orders" type="tns:OrderListSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="FindCartRequest">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="FindCartResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="order" type="tns:OrderSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- ==================== ADDRESS OPERATIONS ==================== -->
+    <xs:element name="CreateAddressRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="address" type="tns:AddressRequestSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="CreateAddressResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="address" type="tns:AddressSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="UpdateAddressRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="address" type="tns:AddressRequestSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="UpdateAddressResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="address" type="tns:AddressSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="DeleteAddressRequest">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="DeleteAddressResponse">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="FindAddressRequest">
+        <xs:complexType>
+            <xs:sequence/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="FindAddressResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="address" type="tns:AddressSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

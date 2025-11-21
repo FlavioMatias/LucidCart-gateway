@@ -1,4 +1,4 @@
-package com.flavex.LucidCart
+package com.LucidCart
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

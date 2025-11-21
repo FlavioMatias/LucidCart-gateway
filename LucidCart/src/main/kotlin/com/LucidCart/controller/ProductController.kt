@@ -1,4 +1,4 @@
-package com.flavex.LucidCart.controller;
+package com.LucidCart.controller
 
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity

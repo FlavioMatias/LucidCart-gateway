@@ -1,0 +1,36 @@
+# Stage 1: Build
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /build
+
+# Copia módulos Go
+COPY AuthService/go.mod AuthService/go.sum ./AuthService/
+WORKDIR /build/AuthService
+RUN go mod download
+
+# Copia todo o código
+COPY AuthService/ /build/AuthService/
+
+# Instala compiladores para CGO
+RUN apk add --no-cache gcc musl-dev
+
+# Compila com CGO habilitado
+RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/api/main.go
+
+# Stage 2: Runtime
+FROM alpine:3.20
+
+WORKDIR /app
+
+# Instala libsqlite para rodar o Go com CGO
+RUN apk add --no-cache sqlite-libs
+
+# Copia o binário compilado
+COPY --from=builder /build/AuthService/server .
+
+# Copia as chaves necessárias
+COPY AuthService/internal/config/keys ./internal/config/keys
+
+EXPOSE 8081
+
+CMD ["./server"]

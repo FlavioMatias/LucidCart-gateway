@@ -1,0 +1,15 @@
+FROM node:20
+
+WORKDIR /app
+
+# Copia só package.json e package-lock.json pra instalar deps
+COPY Front/package*.json ./
+
+RUN npm install --legacy-peer-deps
+
+# Copia o resto do front
+COPY Front/ ./
+
+EXPOSE 4200
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200", "--poll=2000"]
+

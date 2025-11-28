@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: OrderService
+
+  webservices:
+    path: /ws
+
+  datasource:
+    url: jdbc:h2:mem:ordersdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+    hikari:
+      maximum-pool-size: 5
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+server:
+  port: 8082
+
+logging:
+  level:
+    root: INFO
+    org.springframework.ws.server.MessageTracing: TRACE
+    org.springframework.ws.client.MessageTracing: TRACE
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+jwt:
+  public-key: |
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzavczcm5JNpqtxN+QFAu
+    WNOPQDPLJyItYGQgTSexiCZykVIciFyl0O92vV+OOFgUpTcR2i76wqvK01yT3Fpn
+    1Uv9eXCWOu6EcL+sXDlSgjbzKLCpFgoUSeHiXVZcxerpA3P0qXZ7ANKmM4GAmpHL
+    pOLm5bIISOfcThiVZ/EpxtLf7bBKviuTifKZffskQRX3lutnAed6+0fs1XUix8b3
+    y100JGTlRPvm93tb8mMzlmcZ68fbvBEczEf8Gd9QMjGIqSk5h9LC98AqN9RFIQVs
+    pUGgH7bhxr4dIAJIakc/Ti5FPNlILmi/BVL2jNICTwlvGJXBg8CuzkVlB+27fvdc
+    1QIDAQAB
+    -----END PUBLIC KEY-----

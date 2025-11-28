@@ -134,4 +134,16 @@ class ApiEndpoint(
         resp.order = mapper.toOrderSoap(dto)
         return resp
     }
+
+    /* ============================================
+       SEND ORDER OPERATION
+       ============================================ */
+    @PayloadRoot(namespace = NAMESPACE, localPart = "SendOrderRequest")
+    @ResponsePayload
+    fun sendOrder(@RequestPayload req: SendOrderRequest): SendOrderResponse {
+        val dto = orderService.sendOrder(req.id)
+        val resp = SendOrderResponse()
+        resp.order = mapper.toOrderSoap(dto)
+        return resp
+    }
 }

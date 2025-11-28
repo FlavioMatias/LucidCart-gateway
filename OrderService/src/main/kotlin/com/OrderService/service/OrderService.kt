@@ -81,4 +81,16 @@ class OrderService(
 
         return mapper.toOrderDTO(order)
     }
+    fun sendOrder(orderId: Long): OrderResponseDTO {
+        val order = orderRepo.findByIdOrNull(orderId)
+            ?: throw RuntimeException("Order not found")
+
+        if (order.status != OrderStatus.CREATED)
+            throw IllegalStateException("Only orders in CREATED state can be sent")
+
+        return mapper.toOrderDTO(
+            order.apply { status = OrderStatus.PROCESSING }
+                .let(orderRepo::save)
+        )
+    }
 }

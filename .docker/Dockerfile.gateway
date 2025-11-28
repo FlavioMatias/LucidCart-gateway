@@ -1,0 +1,32 @@
+############################################
+# BUILD STAGE – GRADLE
+############################################
+FROM gradle:8.10-jdk21 AS builder
+
+WORKDIR /build/LucidCart
+
+COPY LucidCart/settings.gradle* .
+COPY LucidCart/build.gradle* .
+COPY LucidCart/gradle ./gradle
+COPY LucidCart/gradlew .
+
+RUN ./gradlew dependencies --no-daemon || true
+
+COPY LucidCart/ .
+
+RUN ./gradlew clean bootJar --no-daemon
+
+
+
+############################################
+# RUNTIME – DISTROLESS (LEVE E SEGURO)
+############################################
+FROM gcr.io/distroless/java21:latest
+
+WORKDIR /app
+
+COPY --from=builder /build/LucidCart/build/libs/*.jar app.jar
+
+EXPOSE 8080
+
+CMD ["app.jar"]

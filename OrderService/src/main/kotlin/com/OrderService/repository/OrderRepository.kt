@@ -13,6 +13,7 @@ interface OrderRepository :
     JpaSpecificationExecutor<Order>
 {
     fun findByStatus(status: OrderStatus): Order?
+
     @Query("""
         SELECT DISTINCT o FROM Order o
         JOIN FETCH o.items i
@@ -20,6 +21,7 @@ interface OrderRepository :
         AND o.id = :orderId
     """)
     fun findByUserIdAndOrderId(userId: Long, orderId: Long): Order?
+
     @Query("""
         SELECT DISTINCT o FROM Order o
         JOIN FETCH o.items i

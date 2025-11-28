@@ -85,11 +85,11 @@ tasks.withType<Test> {
 }
 
 tasks.withType<KotlinCompile> {
+    dependsOn("generateJaxb") 
     kotlinOptions {
         jvmTarget = "21"
     }
 }
-
 /* ----------------------------------------------------
    TASK generateJaxb: gera as classes do XSD
 ----------------------------------------------------- */

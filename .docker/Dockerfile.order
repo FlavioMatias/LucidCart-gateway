@@ -1,0 +1,32 @@
+############################################
+# BUILD STAGE – GRADLE + Kotlin + JAXB
+############################################
+FROM gradle:8.10-jdk21 AS builder
+
+WORKDIR /build/OrderService
+
+# Copia arquivos essenciais do Gradle
+COPY OrderService/settings.gradle.kts OrderService/build.gradle.kts ./
+COPY OrderService/gradlew . 
+COPY OrderService/gradle ./gradle
+
+# Copia o código
+COPY OrderService/ ./OrderService
+
+WORKDIR /build/OrderService/OrderService
+
+# Build final do Spring Boot, gera JAXB automaticamente antes da compilação Kotlin
+RUN ./gradlew clean bootJar --no-daemon
+
+############################################
+# RUNTIME – DISTROLESS (leve e seguro)
+############################################
+FROM gcr.io/distroless/java21:latest
+
+WORKDIR /app
+
+COPY --from=builder /build/OrderService/OrderService/build/libs/*.jar app.jar
+
+EXPOSE 8082
+
+CMD ["app.jar"]

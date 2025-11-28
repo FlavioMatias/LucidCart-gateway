@@ -17,7 +17,7 @@ class ItemOrder(
     @Column(nullable = false)
     var productId: Long,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id", nullable = false)
     var order: Order,
 

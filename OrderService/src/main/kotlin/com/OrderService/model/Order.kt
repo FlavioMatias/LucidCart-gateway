@@ -18,11 +18,11 @@ class Order(
     @Column(nullable = false, unique = true)
     var traceCode: String,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "address_id", nullable = false)
     var address: Address,
 
-    @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
     var items: MutableList<ItemOrder> = mutableListOf(),
 
     @Temporal(TemporalType.TIMESTAMP)

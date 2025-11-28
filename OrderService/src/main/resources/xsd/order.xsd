@@ -82,6 +82,23 @@
     </xs:complexType>
 
     <!-- ==================== ORDER OPERATIONS ==================== -->
+    <!-- ==================== SEND ORDER OPERATION ==================== -->
+    <xs:element name="SendOrderRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="id" type="xs:long"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="SendOrderResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="order" type="tns:OrderSoap"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
     <xs:element name="AddItemRequest">
         <xs:complexType>
             <xs:sequence>

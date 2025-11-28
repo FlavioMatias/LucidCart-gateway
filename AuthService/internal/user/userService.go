@@ -71,12 +71,11 @@ func (s *service) Login(email, password string) (string, error) {
 		return "", errors.New("senha incorreta")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"sub":   u.ID,
-		"email": u.Email,
-		"exp":   time.Now().Add(time.Hour).Unix(),
-	})
-
+    token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+        "sub":   u.ID,
+        "email": u.Email,
+        "exp":   time.Now().Add(24 * time.Hour).Unix(),
+    })
 	signed, err := token.SignedString(s.privateKey)
 	if err != nil {
 		return "", err

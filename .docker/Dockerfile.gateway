@@ -3,28 +3,34 @@
 ############################################
 FROM gradle:8.10-jdk21 AS builder
 
+# diretório onde vamos montar o projeto
 WORKDIR /build/LucidCart
 
-COPY LucidCart/settings.gradle* .
-COPY LucidCart/build.gradle* .
-COPY LucidCart/gradle ./gradle
-COPY LucidCart/gradlew .
+# copiar apenas a pasta LucidCart do contexto (".")
+COPY LucidCart/ ./
 
-RUN ./gradlew dependencies --no-daemon || true
+# instalar utilitário para converter CRLF → LF
+USER root
+RUN apt-get update && apt-get install -y dos2unix
 
-COPY LucidCart/ .
+# converter gradlew para formato Linux
+RUN dos2unix gradlew
 
+# permitir execução
+RUN chmod +x gradlew
+
+# build
 RUN ./gradlew clean bootJar --no-daemon
 
 
-
 ############################################
-# RUNTIME – DISTROLESS (LEVE E SEGURO)
+# RUNTIME – DISTROLESS
 ############################################
 FROM gcr.io/distroless/java21:latest
 
 WORKDIR /app
 
+# copia o JAR gerado
 COPY --from=builder /build/LucidCart/build/libs/*.jar app.jar
 
 EXPOSE 8080

@@ -3,10 +3,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { tap } from 'rxjs/operators';
+import { HOST, BASE_URL } from '../../../app.config';
 // =====================================
 // BASE URL (same pattern as other files)
 // =====================================
-export const BASE_URL = 'http://localhost:8080/api/v1';
+
 const AUTH_URL = `${BASE_URL}/auth`;
 const PROFILE_URL = `${BASE_URL}/profile`;
 

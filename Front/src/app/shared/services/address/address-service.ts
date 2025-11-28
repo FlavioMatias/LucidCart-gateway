@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 // =====================================
 // BASE URL GLOBAL
 // =====================================
-export const BASE_URL = 'http://localhost:8080/api/v1';
+import { BASE_URL } from '../../../app.config';
 const ADDRESS_URL = `${BASE_URL}/address`;
 
 // =====================================

@@ -10,6 +10,9 @@ import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './shared/services/user/user-interceptor';
 
+export const HOST = "localhost:8080";
+export const BASE_URL = `http://${HOST}/api/v1`;
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),

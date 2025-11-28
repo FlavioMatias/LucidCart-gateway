@@ -92,12 +92,10 @@
 
 Swagger documentation is available after starting the Gateway:  
 
-```
-
 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-
-```
 
 ---
 
 With **Lucid Cart**, online shopping becomes fast, secure, and effortless. The modular architecture allows easy maintenance, expansion, and integration with future services.
+
+[apresentação](https://www.canva.com/design/DAG59P0pcp4/EXp7NM7My526JWH2IzZ6tw/edit?utm_content=DAG59P0pcp4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)

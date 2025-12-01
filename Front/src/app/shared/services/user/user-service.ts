@@ -8,9 +8,6 @@ import { HOST, BASE_URL } from '../../../app.config';
 // BASE URL (same pattern as other files)
 // =====================================
 
-const AUTH_URL = `${BASE_URL}/auth`;
-const PROFILE_URL = `${BASE_URL}/profile`;
-
 // =====================================
 // MODELS
 // =====================================
@@ -49,18 +46,21 @@ export interface UploadPhotoResponse {
   providedIn: 'root'
 })
 export class AuthService {
+  private get AUTH_URL() { return `${BASE_URL}/auth`; }
+  private get PROFILE_URL() { return `${BASE_URL}/profile`; }
 
   constructor(private http: HttpClient) {}
 
   // ---------- SIGNUP ----------
   signup(req: SignUpDTO): Observable<SignupResponse> {
-    return this.http.post<SignupResponse>(`${AUTH_URL}/signup`, req);
+    return this.http.post<SignupResponse>(`${this.AUTH_URL}/signup`, req);
   }
 
   // ---------- SIGNIN ----------
   signin(req: SignInDTO): Observable<SignInResponse> {
+
     return this.http
-      .post<SignInResponse>(`${AUTH_URL}/signin`, req)
+      .post<SignInResponse>(`${this.AUTH_URL}/signin`, req)
       .pipe(
         tap(res => {
           if (res?.token) {
@@ -78,7 +78,7 @@ export class AuthService {
     formData.append('photo', file);
 
     return this.http.post<UploadPhotoResponse>(
-      `${PROFILE_URL}/photo`,
+      `${this.PROFILE_URL}/photo`,
       formData
     );
   }

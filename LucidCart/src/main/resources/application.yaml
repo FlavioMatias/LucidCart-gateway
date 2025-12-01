@@ -1,9 +1,15 @@
 spring:
   application:
     name: LucidCart
-
+server:
+  port: 8080
+  address: 0.0.0.0
 services:
   order:
-    url: "http://localhost:8082/ws"
+    url: "http://orderservice:8082/ws"
+
   auth:
-    url: "http://localhost:8081"
+    url: "http://authservice:8081"
+
+  product:
+    url: "http://productservice:8086"

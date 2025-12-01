@@ -5,8 +5,7 @@ import { PetsCategoryCardComponent } from "./components/pets-category-card.compo
 import { TechCategoryCardComponent } from "./components/tech-category-card.component";
 import { ProductCardComponent } from "./components/product-card.component";
 import { ProductService } from "../../shared/services/products/products-service";
-import { ProductSimple } from "../../shared/models/product/product-simple.model";
-import { ProductsOptionsComponent } from "./components/products-options.component";
+import { ProductDTO } from "../../shared/services/products/products-service";
 
 @Component({
   selector: 'app-homepage',
@@ -17,7 +16,6 @@ import { ProductsOptionsComponent } from "./components/products-options.componen
     PetsCategoryCardComponent, 
     TechCategoryCardComponent,
     ProductCardComponent,
-    ProductsOptionsComponent,
   ],
   template: `
 <app-home-banner></app-home-banner>
@@ -27,19 +25,8 @@ import { ProductsOptionsComponent } from "./components/products-options.componen
   <app-pets-category-card></app-pets-category-card>
 </div>
 
-<!-- CONTAINER GERAL -->
 <div class="flex gap-10 px-10 mt-10">
 
-  <!-- MENU LATERAL 
-  <div class="w-[20vw] min-w-[220px] pr-6">
-    <app-products-options
-    [sections]="menuData"
-    (optionSelected)="filtrar($event)"
-    ></app-products-options>
-  </div>
-  -->
-
-  <!-- LISTA DE PRODUTOS -->
   <div class="flex-1 ml-10">
     <div
       class="
@@ -57,41 +44,22 @@ import { ProductsOptionsComponent } from "./components/products-options.componen
     </div>
   </div>
 </div>
-
   `
 })
 export class HomePage implements OnInit {
-  products: ProductSimple[] = [];
-  menuData = [
-  {
-    label: 'All Product',
-    icon:'',
-    open: true,
-    children: [
-      { label: 'Categoria A' },
-      { label: 'Categoria B' },
-      { label: 'Categoria C' },
-      { label: 'Categoria D' }
-    ]
-  },
-  {
-    label: 'new Arrival',
-    open: false,
-    children: []
-  },
-  {
-    label: 'on discount',
-    open: false,
-    children: []
-  }
-];
+  products: ProductDTO[] = [];
 
-
-  constructor(private productService: ProductService) {}
+  constructor(private productsService: ProductService) {}
 
   ngOnInit() {
-    this.products = this.productService.getAll();
+    this.productsService.listProducts().subscribe({
+      next: (data) => {
+        this.products = data; // data já é ProductDTO[]
+      },
+      error: (err) => console.error("Erro ao carregar produtos:", err)
+    });
   }
+
   filtrar(categoria: string) {
     console.log(categoria);
   }

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Live WS Search</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #results { 
+            white-space: pre-wrap;
+            background: #f4f4f4; 
+            padding: 10px; 
+            border-radius: 6px; 
+            height: 250px; 
+            overflow-y: auto; 
+            font-family: monospace;
+        }
+        #status { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Live WebSocket Product Search</h2>
+
+<div id="status">Desconectado</div>
+
+<label>Buscar:</label><br>
+<input id="query" size="40" placeholder="digite para buscar (live)">
+<button onclick="connectWS()">Conectar</button>
+<button onclick="disconnectWS()">Desconectar</button>
+
+<h3>Resultados:</h3>
+<div id="results"></div>
+
+<script>
+    let socket = null;
+    let lastSent = "";
+
+    function setStatus(txt) {
+        document.getElementById("status").textContent = txt;
+    }
+
+    function addResult(msg) {
+        const res = document.getElementById("results");
+        res.textContent += msg + "\n";
+        res.scrollTop = res.scrollHeight;
+    }
+
+    function clearResults() {
+        document.getElementById("results").textContent = "";
+    }
+
+    function connectWS() {
+        const url = "ws://localhost:8086/api/v1/ws/products?token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZsYXZpb0BmbGF2aW8uY29tIiwiZXhwIjoxNzY0NjQ3MzEwLCJzdWIiOjF9.K37VeWtZM9oj1zIz8QLB3zCZHJjKV-KKma4jN1o0cfyZbm1MqnI3bV8ZwPAPhXyNEvQQct-0BNmhrvB9tgKuwkmBmeacP5pp2gZorojkcRxs3Qt1WYmKKR6iRy_GjQypOONBZKkATn-RbBcm9DNQO7l-dOIuSSNhCLlCnYm9GttV1YqT9l6o9B-tgPRhdzoVSMmywWmBqWfbZZC7j8lz6bQ2W0Cp8FMb6nCv5bV-vkV9SS2ontbkgJ-_4iPHShNfcfVhLQlyXjoWabPxjuzlE2DhEyFi4DsNvvPxX3OUTs_-TAOTJcz0K5phK-ZgyEBuJ6-6rr6GZy7E-tSxht6P-Q";
+        socket = new WebSocket(url);
+
+        socket.onopen = () => setStatus("🔥 Conectado");
+        
+        socket.onmessage = (event) => {
+            if (event.data === "__END__") {
+                addResult("✔️ Fim da busca.\n");
+                return;
+            }
+            addResult("📩 " + event.data);
+        };
+
+        socket.onerror = () => setStatus("⚠️ Erro no WebSocket");
+        socket.onclose = () => setStatus("🔌 Desconectado");
+    }
+
+    function disconnectWS() {
+        if (socket) socket.close();
+    }
+
+    // Live search: envia WS a cada tecla
+    document.getElementById("query").addEventListener("input", (e) => {
+        const text = e.target.value;
+
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+            setStatus("❌ WS não conectado");
+            return;
+        }
+
+        // não flooda se a string é igual
+        if (text === lastSent) return;
+        lastSent = text;
+
+        clearResults();
+        socket.send(text);
+    });
+</script>
+
+</body>
+</html>

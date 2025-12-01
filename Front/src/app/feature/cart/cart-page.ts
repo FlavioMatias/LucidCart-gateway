@@ -2,9 +2,8 @@ import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
-import { OrdersService, ItemOrderDTO, OrderDTO, SendOrderResponseDTO } from "../../shared/services/orders/order-service";
-import { ProductService } from "../../shared/services/products/products-service";
-import { ProductSimple } from "../../shared/models/product/product-simple.model";
+import { OrdersService, ItemOrderDTO, OrderDTO } from "../../shared/services/orders/order-service";
+import { ProductDTO, ProductService } from "../../shared/services/products/products-service";
 
 @Component({
   selector: 'app-cart-page',
@@ -15,22 +14,22 @@ import { ProductSimple } from "../../shared/models/product/product-simple.model"
 
   <div class="flex gap-10 w-full max-w-6xl">
 
-    <!-- LEFT - ITEMS LIST -->
+    <!-- LEFT -->
     <div class="flex-1 bg-white shadow-md rounded-xl p-6">
 
       <h2 class="text-2xl font-semibold mb-6">Your cart</h2>
 
       <div *ngIf="loading" class="text-gray-500">Loading...</div>
 
-      <div *ngIf="!loading && cart?.items?.length === 0" class="text-gray-600 text-center p-10">
+      <div *ngIf="!loading && safeItems.length === 0" class="text-gray-600 text-center p-10">
         Your cart is empty.
       </div>
 
-      <div *ngFor="let item of cart?.items"
+      <div *ngFor="let item of safeItems"
            class="flex items-center gap-5 border border-gray-200 rounded-xl p-4 mb-4">
 
         <img 
-          [src]="getProduct(item.productId)?.imageUrl"
+          [src]="getProduct(item.productId)?.image"
           alt="product" 
           class="w-28 h-28 rounded-md object-cover"
         >
@@ -39,6 +38,7 @@ import { ProductSimple } from "../../shared/models/product/product-simple.model"
           <p class="text-lg font-medium">
             {{ getProduct(item.productId)?.name }}
           </p>
+
           <p class="text-green-600 font-semibold mt-1">
             $ {{ item.unitPrice.toFixed(2) }}
           </p>
@@ -48,7 +48,7 @@ import { ProductSimple } from "../../shared/models/product/product-simple.model"
           class="border rounded-lg px-2 py-1"
           [(ngModel)]="item.quantity"
           (ngModelChange)="updateQuantity(item, $event)">
-          <option *ngFor="let n of [1,2,3,4,5,6,7,8,9]" [value]="n">
+          <option *ngFor="let n of quantities" [value]="n">
             Qty: {{n}}
           </option>
         </select>
@@ -58,6 +58,7 @@ import { ProductSimple } from "../../shared/models/product/product-simple.model"
           (click)="removeItem(item)">
           🗑️
         </button>
+
       </div>
 
       <div class="flex justify-end mt-6" *ngIf="safeItems.length > 0">
@@ -67,9 +68,10 @@ import { ProductSimple } from "../../shared/models/product/product-simple.model"
           Cancel
         </button>
       </div>
+
     </div>
 
-    <!-- RIGHT - SUMMARY -->
+    <!-- RIGHT -->
     <div class="w-[300px] bg-white shadow-md rounded-xl p-6 h-fit">
 
       <h3 class="text-xl font-semibold mb-6">Purchase summary</h3>
@@ -81,7 +83,7 @@ import { ProductSimple } from "../../shared/models/product/product-simple.model"
 
       <button 
         class="w-full py-2 mt-6 border border-gray-700 rounded-lg hover:bg-gray-100 transition"
-        [disabled]="!cart || cart.items.length === 0 || sending"
+        [disabled]="safeItems.length === 0 || sending"
         (click)="buyNow()">
         {{ sending ? 'Sending...' : 'Buy now' }}
       </button>
@@ -97,6 +99,10 @@ export class CartPageComponent implements OnInit {
   loading = true;
   sending = false;
 
+  productsMap: Record<number, ProductDTO> = {};
+
+  quantities = [1,2,3,4,5,6,7,8,9];
+
   constructor(
     private ordersService: OrdersService,
     private productService: ProductService,
@@ -104,15 +110,28 @@ export class CartPageComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.preloadProducts();
     this.loadCart();
   }
 
-  getProduct(id: number): ProductSimple | undefined {
-    return this.productService.getById(id);
+  // ---------- CARREGA TODOS PRODUTOS UMA VEZ ----------
+  preloadProducts() {
+    this.productService.listProducts().subscribe({
+      next: res => {
+        for (const p of res) this.productsMap[p.id] = p;
+      },
+      error: err => console.error("Error loading products", err)
+    });
   }
+
+  getProduct(id: number): ProductDTO | undefined {
+    return this.productsMap[id];
+  }
+
   get safeItems(): ItemOrderDTO[] {
     return this.cart?.items ?? [];
   }
+
   loadCart() {
     this.loading = true;
     this.ordersService.findCart().subscribe({
@@ -143,24 +162,19 @@ export class CartPageComponent implements OnInit {
     });
   }
 
-  cancelCart() {
-    if (!this.cart) return;
-
-    this.ordersService.deleteOrder(this.cart.id!).subscribe({
-      next: () => {
-        this.cart = null;
-        this.router.navigate(['/products']);
-      },
+  cancelOrder() {
+    if (!this.cart?.id) return;
+    this.ordersService.deleteOrder(this.cart.id).subscribe({
+      next: () => this.router.navigate(['/orders']),
       error: err => {
-        console.error("Error cancelling cart", err);
-        alert("Error cancelling cart!");
+        console.error("Error canceling order", err);
+        alert("Error canceling current order!");
       }
     });
   }
 
   getTotal(): number {
-    if (!this.cart) return 0;
-    return this.cart.items.reduce(
+    return this.safeItems.reduce(
       (acc, i) => acc + (i.unitPrice * i.quantity), 
       0
     );
@@ -168,8 +182,8 @@ export class CartPageComponent implements OnInit {
 
   buyNow() {
     if (!this.cart) return;
-    this.sending = true;
 
+    this.sending = true;
     this.ordersService.sendOrder(this.cart).subscribe({
       next: () => {
         this.sending = false;
@@ -178,20 +192,6 @@ export class CartPageComponent implements OnInit {
       error: () => {
         this.sending = false;
         alert('Error sending order!');
-      }
-    });
-    
-  }
-    cancelOrder() {
-    if (!this.cart?.id) return;
-
-    this.ordersService.deleteOrder(this.cart.id).subscribe({
-      next: () => {
-        this.router.navigate(['/orders']);
-      },
-      error: err => {
-        console.error("Error canceling order", err);
-        alert("Error canceling current order!");
       }
     });
   }

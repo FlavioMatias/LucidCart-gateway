@@ -21,7 +21,7 @@ func NewServer() *Server {
 	}
 
 	// banco
-	db := config.NewSQLite("data.db", &user.User{})
+	db := config.NewSQLiteMemory(&user.User{})
 
 	privateKey, err := config.LoadPrivateKey("internal/config/keys/private.pem")
 	if err != nil {

@@ -1,18 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
-// =====================================
-// BASE URL GLOBAL
-// =====================================
 import { BASE_URL } from '../../../app.config';
-const ADDRESS_URL = `${BASE_URL}/address`;
 
 // =====================================
 // MODELS
 // =====================================
 
-// ----- Address -----
 export interface AddressDTO {
   id: number | null;
   userId: number;
@@ -27,7 +21,6 @@ export interface AddressRequestDTO {
   longitude: number;
 }
 
-// ----- Responses -----
 export interface CreateAddressResponseDTO {
   address: AddressDTO;
 }
@@ -51,19 +44,22 @@ export class AddressService {
 
   constructor(private http: HttpClient) {}
 
+  // Avaliação dinâmica da URL
+  private get ADDRESS_URL() { return `${BASE_URL}/address`; }
+
   createAddress(req: AddressRequestDTO): Observable<CreateAddressResponseDTO> {
-    return this.http.post<CreateAddressResponseDTO>(ADDRESS_URL, req);
+    return this.http.post<CreateAddressResponseDTO>(this.ADDRESS_URL, req);
   }
 
   updateAddress(req: AddressRequestDTO): Observable<UpdateAddressResponseDTO> {
-    return this.http.put<UpdateAddressResponseDTO>(ADDRESS_URL, req);
+    return this.http.put<UpdateAddressResponseDTO>(this.ADDRESS_URL, req);
   }
 
   deleteAddress(): Observable<void> {
-    return this.http.delete<void>(ADDRESS_URL);
+    return this.http.delete<void>(this.ADDRESS_URL);
   }
 
   findAddress(): Observable<FindAddressResponseDTO> {
-    return this.http.get<FindAddressResponseDTO>(ADDRESS_URL);
+    return this.http.get<FindAddressResponseDTO>(this.ADDRESS_URL);
   }
 }

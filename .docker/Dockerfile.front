@@ -1,15 +1,15 @@
-FROM node:20
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copia só package.json e package-lock.json pra instalar deps
+# Dependências
 COPY Front/package*.json ./
-
 RUN npm install --legacy-peer-deps
 
-# Copia o resto do front
+# Código
 COPY Front/ ./
 
 EXPOSE 4200
-CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200", "--poll=2000"]
 
+# Serve a aplicação Angular
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200", "--poll=2000"]

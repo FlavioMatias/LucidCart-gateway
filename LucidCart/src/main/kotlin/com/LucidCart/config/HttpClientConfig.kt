@@ -1,6 +1,7 @@
 package com.LucidCart.config
 
 import com.LucidCart.gateway.order.OrderClientHTTP
+import com.LucidCart.gateway.product.ProductClientHTTP
 import com.LucidCart.gateway.user.UserClientHTTP
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -47,5 +48,25 @@ class UserClientConfig {
             .exchangeAdapter(adapter)
             .build()
         return factory.createClient(UserClientHTTP::class.java)
+    }
+}
+
+@Configuration
+class ProductClientConfig {
+
+    @Bean
+    fun productRestClient(@Value("\${services.product.url}") baseUrl: String): RestClient {
+        return RestClient.builder()
+            .baseUrl(baseUrl)
+            .build()
+    }
+
+    @Bean
+    fun productClientHttp(@Qualifier("productRestClient") restClient: RestClient): ProductClientHTTP {
+        val adapter = RestClientAdapter.create(restClient)
+        val factory = HttpServiceProxyFactory.builder()
+            .exchangeAdapter(adapter)
+            .build()
+        return factory.createClient(ProductClientHTTP::class.java)
     }
 }

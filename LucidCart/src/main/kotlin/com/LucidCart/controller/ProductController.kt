@@ -1,57 +1,42 @@
 package com.LucidCart.controller
 
-import com.LucidCart.service.ProductService
 import com.LucidCart.gateway.product.Product
-import org.springframework.hateoas.EntityModel
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*
-import org.springframework.web.bind.annotation.*
+import com.LucidCart.service.ProductService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.springframework.web.bind.annotation.*
 
-@Tag(name = "Products", description = "Gerenciamento de produtos da loja")
+@Tag(name = "Products", description = "Store product management")
 @RestController
 @RequestMapping("/api/v1/products")
 class ProductController(private val productService: ProductService) {
 
-    @Operation(summary = "Lista todos os produtos", description = "Retorna uma lista completa de produtos disponíveis na loja com links HATEOAS para cada produto.")
+    @Operation(summary = "List all products", description = "Returns a complete list of available products in the store.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
+            ApiResponse(responseCode = "200", description = "List returned successfully")
         ]
     )
-    @GetMapping()
-    fun listAll(): List<EntityModel<Product>> {
-        return productService.listAllProducts().map { product ->
-            val model = EntityModel.of(product)
-            model.add(
-                linkTo(methodOn(ProductController::class.java).getById(product.id)).withSelfRel(),
-                linkTo(methodOn(ProductController::class.java).listAll()).withRel("all_products")
-            )
-            model
-        }
+    @GetMapping
+    fun listAll(): List<Product> {
+        return productService.listAllProducts()
     }
 
-    @Operation(summary = "Busca um produto por ID", description = "Retorna um produto específico identificado pelo seu ID com links HATEOAS.")
+    @Operation(summary = "Get product by ID", description = "Returns a specific product identified by its ID.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Produto encontrado com sucesso"),
-            ApiResponse(responseCode = "404", description = "Produto não encontrado")
+            ApiResponse(responseCode = "200", description = "Product retrieved successfully"),
+            ApiResponse(responseCode = "404", description = "Product not found")
         ]
     )
     @GetMapping("/{id}")
     fun getById(
-        @Parameter(description = "ID do produto que deseja consultar", required = true)
+        @Parameter(description = "ID of the product to retrieve", required = true)
         @PathVariable id: Int
-    ): EntityModel<Product> {
-        val product = productService.getProductById(id)
-        val model = EntityModel.of(product)
-        model.add(
-            linkTo(methodOn(ProductController::class.java).getById(id)).withSelfRel(),
-            linkTo(methodOn(ProductController::class.java).listAll()).withRel("all_products")
-        )
-        return model
+    ): Product {
+        return productService.getProductById(id)
     }
 }

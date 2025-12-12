@@ -6,7 +6,7 @@ server:
   address: 0.0.0.0
 services:
   order:
-    url: "http://orderservice:8082/ws"
+    url: "http://orderservice:8082"
 
   auth:
     url: "http://authservice:8081"

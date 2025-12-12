@@ -22,6 +22,7 @@ class JwtService(
 
     fun validateAndGetUserId(token: String): Long? {
         logger.info("validateAndGetUserId called")
+        logger.info("Original token received: '{}'", token)
 
         try {
             if (token.isBlank()) {
@@ -29,39 +30,45 @@ class JwtService(
                 return null
             }
 
-            logger.debug("Raw token (trimmed to 500 chars): ${token.take(500)}")
-            val hasBearerPrefix = token.startsWith("Bearer ", ignoreCase = true)
-            logger.debug("Starts with 'Bearer '? {}", hasBearerPrefix)
+            // Remove o prefixo Bearer de forma robusta
+            val rawToken = if (token.startsWith("Bearer ", ignoreCase = true)) {
+                token.substring(7).trim()
+            } else {
+                token.trim()
+            }
+            logger.info("Token after removing 'Bearer': '{}'", rawToken.take(500))
 
-            val rawToken = token.removePrefix("Bearer").trim()
-            logger.debug("Trimmed token length: {}", rawToken.length)
-
-            // quick structural check
+            // Estrutura do JWT: header.payload.signature
             val parts = rawToken.split(".")
             if (parts.size != 3) {
-                logger.error("Token does not have 3 parts (header.payload.signature). Parts: {}", parts.size)
-                logger.debug("Token parts sizes: header=${parts.getOrNull(0)?.length ?: 0}, payload=${parts.getOrNull(1)?.length ?: 0}, signature=${parts.getOrNull(2)?.length ?: 0}")
+                logger.error("Token does not have 3 parts (header.payload.signature). Parts count: {}", parts.size)
+                parts.forEachIndexed { i, part -> logger.debug("Part[{}] length={}", i, part.length) }
                 return null
             }
 
-            // try to Base64Url decode header & payload for inspection (safe for debugging)
-            try {
-                val headerJson = String(Base64.getUrlDecoder().decode(parts[0]))
-                val payloadJson = String(Base64.getUrlDecoder().decode(parts[1]))
-                logger.debug("JWT header JSON: {}", headerJson)
-                logger.debug("JWT payload JSON: {}", payloadJson.take(2000)) // limit length
-            } catch (decEx: Exception) {
-                logger.warn("Failed to Base64Url-decode JWT header/payload for inspection", decEx)
+            // Decodifica header e payload para inspeção
+            val headerJson = try { String(Base64.getUrlDecoder().decode(parts[0])) } catch (e: Exception) {
+                logger.warn("Failed to decode JWT header", e); null
+            }
+            val payloadJson = try { String(Base64.getUrlDecoder().decode(parts[1])) } catch (e: Exception) {
+                logger.warn("Failed to decode JWT payload", e); null
+            }
+            logger.info("Decoded JWT header: {}", headerJson)
+            logger.info("Decoded JWT payload (truncated 500 chars): {}", payloadJson?.take(500))
+
+            // Parse e valida assinatura + claims
+            val claims = try {
+                Jwts.parserBuilder()
+                    .setSigningKey(publicKey)
+                    .build()
+                    .parseClaimsJws(rawToken)
+                    .body
+            } catch (e: Exception) {
+                logger.error("Failed to parse JWT or invalid signature: {}", e.message)
+                return null
             }
 
-            // Parse and validate signature + expiry using public key
-            val claims = Jwts.parserBuilder()
-                .setSigningKey(publicKey)
-                .build()
-                .parseClaimsJws(rawToken)
-                .body
-
-            // Log important claim info
+            // Logs detalhados de claims
             val subject = claims.subject
             val expiration: Date? = claims.expiration
             val issuedAt: Date? = claims.issuedAt
@@ -69,21 +76,16 @@ class JwtService(
             logger.info("JWT parsed successfully. subject='{}', expiration='{}', issuedAt='{}'", subject, expiration, issuedAt)
             logger.debug("All claims keys: {}", claims.keys.joinToString(", "))
 
-            // Dump claims values in debug (but mask long values)
-            try {
-                claims.forEach { (k, v) ->
-                    val valueStr = when (v) {
-                        null -> "null"
-                        is String -> if (v.length > 300) "${v.take(300)}...(truncated ${v.length} chars)" else v
-                        else -> v.toString()
-                    }
-                    logger.debug("claim '{}': {}", k, valueStr)
+            claims.forEach { (k, v) ->
+                val valueStr = when (v) {
+                    null -> "null"
+                    is String -> if (v.length > 300) "${v.take(300)}...(truncated ${v.length} chars)" else v
+                    else -> v.toString()
                 }
-            } catch (e: Exception) {
-                logger.warn("Could not iterate claims safely", e)
+                logger.debug("claim '{}': {}", k, valueStr)
             }
 
-            // check expiration explicitly
+            // Valida expiração
             if (expiration != null) {
                 val now = Date()
                 val expired = expiration.before(now)
@@ -96,7 +98,7 @@ class JwtService(
                 logger.warn("No 'exp' claim present in token")
             }
 
-            // subject -> user id
+            // Converte subject para userId
             val userId = subject?.toLongOrNull()
             if (userId == null) {
                 logger.error("Subject is null or not a number: subject='{}'", subject)
@@ -104,9 +106,10 @@ class JwtService(
                 logger.info("Resolved userId = {}", userId)
             }
 
+            logger.info("Returning userId: {}", userId)
             return userId
+
         } catch (jwtEx: JwtException) {
-            // Signature, malformed, unsupported, expired exceptions extend JwtException
             logger.error("JWT exception while validating token: ${jwtEx.message}", jwtEx)
             return null
         } catch (ex: Exception) {
@@ -116,12 +119,16 @@ class JwtService(
     }
 
     private fun loadPublicKey(keyStr: String): PublicKey {
+        logger.info("Loading public key...")
         val clean = keyStr
             .replace("-----BEGIN PUBLIC KEY-----", "")
             .replace("-----END PUBLIC KEY-----", "")
             .replace("\\s".toRegex(), "")
+        logger.debug("Public key base64 cleaned: '{}'", clean.take(50) + "...")
         val keyBytes = Base64.getDecoder().decode(clean)
         val spec = X509EncodedKeySpec(keyBytes)
-        return KeyFactory.getInstance("RSA").generatePublic(spec)
+        val key = KeyFactory.getInstance("RSA").generatePublic(spec)
+        logger.info("Public key loaded successfully")
+        return key
     }
 }

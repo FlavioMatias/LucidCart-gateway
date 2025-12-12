@@ -2,7 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
-import { OrdersService, ItemOrderDTO, OrderDTO } from "../../shared/services/orders/order-service";
+import { OrdersService, ItemOrderResponseDTO, OrderResponseDTO } from "../../shared/services/orders/order-service";
 import { ProductDTO, ProductService } from "../../shared/services/products/products-service";
 
 @Component({
@@ -95,7 +95,7 @@ import { ProductDTO, ProductService } from "../../shared/services/products/produ
 })
 export class CartPageComponent implements OnInit {
 
-  cart: OrderDTO | null = null;
+  cart: OrderResponseDTO | null = null;
   loading = true;
   sending = false;
 
@@ -128,7 +128,7 @@ export class CartPageComponent implements OnInit {
     return this.productsMap[id];
   }
 
-  get safeItems(): ItemOrderDTO[] {
+  get safeItems(): ItemOrderResponseDTO[] {
     return this.cart?.items ?? [];
   }
 
@@ -136,7 +136,7 @@ export class CartPageComponent implements OnInit {
     this.loading = true;
     this.ordersService.findCart().subscribe({
       next: res => {
-        this.cart = res.order;
+        this.cart = res;
         this.loading = false;
       },
       error: err => {
@@ -146,7 +146,7 @@ export class CartPageComponent implements OnInit {
     });
   }
 
-  updateQuantity(item: ItemOrderDTO, quantity: number) {
+  updateQuantity(item: ItemOrderResponseDTO, quantity: number) {
     this.ordersService.updateItem(item.id!, {
       productId: item.productId,
       quantity,
@@ -154,7 +154,7 @@ export class CartPageComponent implements OnInit {
     }).subscribe(() => this.loadCart());
   }
 
-  removeItem(item: ItemOrderDTO) {
+  removeItem(item: ItemOrderResponseDTO) {
     this.ordersService.deleteItem(item.id!).subscribe(() => {
       if (this.cart) {
         this.cart.items = this.cart.items.filter(i => i.id !== item.id);
@@ -184,7 +184,7 @@ export class CartPageComponent implements OnInit {
     if (!this.cart) return;
 
     this.sending = true;
-    this.ordersService.sendOrder(this.cart).subscribe({
+    this.ordersService.sendOrder(this.cart.id).subscribe({
       next: () => {
         this.sending = false;
         this.router.navigate(['/orders']);

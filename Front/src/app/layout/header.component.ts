@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { SrcBarComponent } from '../shared/components/srcbar.component';
 import { AuthService } from '../shared/services/user/user-service';
-import { AddressService, FindAddressResponseDTO } from '../shared/services/address/address-service';
+import { AddressService, AddressResponseDTO} from '../shared/services/address/address-service';
 import { OrdersService } from '../shared/services/orders/order-service';
 import { ProductService, ProductDTO } from '../shared/services/products/products-service';
 import { Subscription } from 'rxjs';
@@ -103,7 +103,7 @@ export class Header implements OnInit, OnDestroy {
 
   loadAddress() {
     this.addressService.findAddress().subscribe({
-      next: (res: FindAddressResponseDTO) => this.address = res.address.fullAddress,
+      next: (res: AddressResponseDTO) => this.address = res.fullAddress,
       error: () => this.address = ''
     });
   }

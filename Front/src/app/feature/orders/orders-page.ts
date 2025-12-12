@@ -1,6 +1,6 @@
 import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { OrdersService, OrderDTO, OrderStatusDTO } from "../../shared/services/orders/order-service";
+import { OrdersService, OrderResponseDTO, OrderStatusDTO } from "../../shared/services/orders/order-service";
 
 @Component({
   selector: 'app-orders-page',
@@ -47,7 +47,7 @@ import { OrdersService, OrderDTO, OrderStatusDTO } from "../../shared/services/o
 })
 export class OrdersPageComponent implements OnInit {
 
-  orders: OrderDTO[] = [];
+  orders: OrderResponseDTO[] = [];
   loading = true;
 
   constructor(private ordersService: OrdersService) {}
@@ -60,7 +60,7 @@ export class OrdersPageComponent implements OnInit {
     this.loading = true;
     this.ordersService.listOrders().subscribe({
       next: res => {
-        this.orders = res.orders;
+        this.orders = res;
         this.loading = false;
       },
       error: err => {
@@ -70,7 +70,7 @@ export class OrdersPageComponent implements OnInit {
     });
   }
 
-  getTotal(order: OrderDTO): number {
+  getTotal(order: OrderResponseDTO): number {
     return order.items.reduce((acc, i) => acc + (i.unitPrice * i.quantity), 0);
   }
 

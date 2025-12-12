@@ -1,12 +1,10 @@
 package com.LucidCart.controller
 
-import com.LucidCart.service.UserService
 import com.LucidCart.gateway.user.*
+import com.LucidCart.service.UserService
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import org.springframework.hateoas.EntityModel
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -17,87 +15,66 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 data class SignupResponse(val id: Long?, val email: String?)
 data class UploadPhotoResponse(val photo_url: String)
 
-@Tag(name = "Auth", description = "Endpoints de autenticação de usuários")
+@Tag(name = "Auth", description = "User authentication endpoints")
 @RestController
 @RequestMapping("/api/v1/auth")
 class AuthController(private val userService: UserService) {
 
-    @Operation(summary = "Registrar novo usuário", description = "Cria um novo usuário com email e senha.")
+    @Operation(summary = "Register new user", description = "Creates a new user with email and password.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Usuário criado com sucesso"),
-            ApiResponse(responseCode = "400", description = "Dados inválidos")
+            ApiResponse(responseCode = "200", description = "User created successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid data")
         ]
     )
     @PostMapping("/signup")
-    fun signup(@RequestBody req: SignUpDTO): EntityModel<SignupResponse> {
+    fun signup(@RequestBody req: SignUpDTO): SignupResponse {
         val createdUser = userService.signup(req.email, req.password)
-        val response = SignupResponse(createdUser.id, createdUser.email)
-        val model = EntityModel.of(response)
-        model.add(
-            linkTo(AuthController::class.java).slash("signup").withSelfRel(),
-            linkTo(AuthController::class.java).slash("signin").withRel("signin")
-        )
-        return model
+        return SignupResponse(createdUser.id, createdUser.email)
     }
 
-    @Operation(summary = "Login de usuário", description = "Autentica um usuário e retorna token JWT.")
+    @Operation(summary = "User login", description = "Authenticates a user and returns a JWT token.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
-            ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+            ApiResponse(responseCode = "200", description = "Login successful"),
+            ApiResponse(responseCode = "401", description = "Invalid credentials")
         ]
     )
     @PostMapping("/signin")
-    fun signin(@RequestBody req: SignInDTO): EntityModel<SignInResponse> {
+    fun signin(@RequestBody req: SignInDTO): SignInResponse {
         val token = userService.login(req.email, req.password)
-        val response = SignInResponse(token)
-        val model = EntityModel.of(response)
-        model.add(
-            linkTo(AuthController::class.java).slash("signin").withSelfRel(),
-            linkTo(AuthController::class.java).slash("signup").withRel("signup"),
-            linkTo(ProfileController::class.java).slash("photo").withRel("upload_profile_photo")
-        )
-        return model
+        return SignInResponse(token)
     }
 }
 
-@Tag(name = "Profile", description = "Endpoints de perfil de usuário")
+@Tag(name = "Profile", description = "User profile endpoints")
 @RestController
 @RequestMapping("/api/v1/profile")
 class ProfileController(private val userService: UserService) {
 
-    @Operation(summary = "Upload de foto de perfil", description = "Envia uma imagem para ser usada como foto de perfil do usuário.")
+    @Operation(summary = "Upload profile photo", description = "Uploads an image to be used as the user's profile photo.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Foto enviada com sucesso"),
-            ApiResponse(responseCode = "400", description = "Arquivo inválido ou ausente"),
-            ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+            ApiResponse(responseCode = "200", description = "Photo uploaded successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid or missing file"),
+            ApiResponse(responseCode = "401", description = "Invalid or missing token")
         ]
     )
     @PostMapping("/photo", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadProfilePhoto(
-        @Parameter(description = "Token JWT do usuário", required = true)
+        @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String,
-        @Parameter(description = "Arquivo de imagem do perfil", required = true)
+        @Parameter(description = "Profile image file", required = true)
         @RequestPart("photo") file: MultipartFile
-    ): EntityModel<UploadPhotoResponse> {
+    ): UploadPhotoResponse {
 
         val photoUrl = userService.uploadProfilePhoto(
-            userId = 0, // ajuste depois com JWT
+            userId = 0,
             token = token.removePrefix("Bearer "),
             fileBytes = file.bytes,
             filename = file.originalFilename ?: "profile.png"
         )
 
-        val response = UploadPhotoResponse(photoUrl)
-        val model = EntityModel.of(response)
-        model.add(
-            linkTo(ProfileController::class.java).slash("photo").withSelfRel(),
-            linkTo(AuthController::class.java).slash("signin").withRel("signin"),
-            linkTo(AuthController::class.java).slash("signup").withRel("signup")
-        )
-
-        return model
+        return UploadPhotoResponse(photoUrl)
     }
 }

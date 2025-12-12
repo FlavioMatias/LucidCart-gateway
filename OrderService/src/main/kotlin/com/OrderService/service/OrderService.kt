@@ -11,10 +11,14 @@ import com.OrderService.utils.builder.OrderQueryBuilder
 import com.OrderService.utils.dto.ItemOrderRequestDTO
 import com.OrderService.utils.dto.ItemOrderResponseDTO
 import com.OrderService.utils.dto.OrderResponseDTO
+import com.OrderService.utils.events.ItemPayload
+import com.OrderService.utils.events.OrderCreatedEvent
+import com.OrderService.utils.events.OrderEventPublisher
 import com.OrderService.utils.factory.ItemOrderFactory
 import com.OrderService.utils.factory.OrderFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class OrderService(
@@ -23,7 +27,8 @@ class OrderService(
     private val itemRepo: ItemOrderRepository,
     private val itemOrderFactory: ItemOrderFactory,
     private val orderFactory: OrderFactory,
-    private val mapper: OrderMapper
+    private val mapper: OrderMapper,
+    private val publisher: OrderEventPublisher
 ) {
 
     fun addItem(userId : Long, dto: ItemOrderRequestDTO) : ItemOrderResponseDTO{
@@ -81,16 +86,30 @@ class OrderService(
 
         return mapper.toOrderDTO(order)
     }
-    fun sendOrder(orderId: Long): OrderResponseDTO {
+    @Transactional
+    fun sendOrder(userId: Long, orderId: Long): OrderResponseDTO {
         val order = orderRepo.findByIdOrNull(orderId)
             ?: throw RuntimeException("Order not found")
 
         if (order.status != OrderStatus.CREATED)
             throw IllegalStateException("Only orders in CREATED state can be sent")
 
-        return mapper.toOrderDTO(
-            order.apply { status = OrderStatus.PROCESSING }
-                .let(orderRepo::save)
+        val updated = order.apply { status = OrderStatus.PROCESSING }
+        orderRepo.save(updated)
+
+        val event = OrderCreatedEvent(
+            orderId = updated.id!!,
+            userId = userId,
+            items = updated.items.map {
+                ItemPayload(
+                    productId = it.productId,
+                    quantity = it.quantity
+                )
+            }
         )
+
+        publisher.publishOrderCreated(event)
+
+        return mapper.toOrderDTO(updated)
     }
 }

@@ -2,39 +2,28 @@ package com.LucidCart.controller
 
 import com.LucidCart.gateway.order.*
 import com.LucidCart.service.OrderService
-import com.LucidCart.controller.assemblers.*
-import org.springframework.hateoas.EntityModel
-import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.springframework.web.bind.annotation.*
 
-@Tag(name = "Orders", description = "Gerenciamento de pedidos e itens do carrinho")
+@Tag(name = "Orders", description = "Management of orders and cart items")
 @RestController
 @RequestMapping("/api/v1/orders")
 class OrderController(
-    private val orderService: OrderService,
-    private val addItemAssembler: AddItemResponseAssembler,
-    private val updateItemAssembler: UpdateItemResponseAssembler,
-    private val deleteItemAssembler: DeleteItemResponseAssembler,
-    private val findOrderAssembler: FindOrderResponseAssembler,
-    private val listOrdersAssembler: ListOrdersResponseAssembler,
-    private val findCartAssembler: FindCartResponseAssembler,
-    private val deleteOrderAssembler: DeleteOrderResponseAssembler,
-    private val sendOrderAssembler: SendOrderResponseAssembler
+    private val orderService: OrderService
 ) {
 
     // ---------- ITEMS ----------
 
-    @Operation(summary = "Adicionar item ao pedido", description = "Adiciona um produto ao carrinho/pedido do usuário autenticado.")
+    @Operation(summary = "Add item to order", description = "Adds a product to the authenticated user's cart/order.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Item adicionado com sucesso"),
-            ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+            ApiResponse(responseCode = "200", description = "Item added successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid data"),
+            ApiResponse(responseCode = "401", description = "Invalid or missing token")
         ]
     )
     @PostMapping("/items")
@@ -42,91 +31,82 @@ class OrderController(
         @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String,
         @RequestBody req: ItemOrderRequestDTO
-    ): EntityModel<*> {
-        val res: AddItemResponseDTO = orderService.addItem(req, token)
-        return addItemAssembler.toModel(res)
+    ): ItemOrderResponseDTO {
+        return orderService.addItem(token, req)
     }
 
-    @Operation(summary = "Atualizar item do pedido", description = "Atualiza um item existente no carrinho/pedido.")
+    @Operation(summary = "Update order item", description = "Updates an existing item in the cart/order.")
     @PutMapping("/items/{id}")
     fun updateItem(
         @PathVariable id: Long,
         @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String,
         @RequestBody req: ItemOrderRequestDTO
-    ): EntityModel<*> {
-        val res: UpdateItemResponseDTO = orderService.updateItem(id, req, token)
-        return updateItemAssembler.toModel(res)
+    ): ItemOrderResponseDTO {
+        return orderService.updateItem(token, id, req)
     }
 
-    @Operation(summary = "Remover item do pedido", description = "Remove um item do carrinho/pedido do usuário.")
+    @Operation(summary = "Remove order item", description = "Removes an item from the authenticated user's cart/order.")
     @DeleteMapping("/items/{id}")
     fun deleteItem(
         @PathVariable id: Long,
         @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String
-    ): ResponseEntity<Void> {
-        orderService.deleteItem(id, token)
-        return ResponseEntity.noContent().build()
+    ) {
+        orderService.deleteItem(token, id)
     }
 
     // ---------- ORDERS ----------
 
-    @Operation(summary = "Buscar pedido pelo ID", description = "Retorna um pedido específico do usuário.")
+    @Operation(summary = "Get order by ID", description = "Returns a specific order of the authenticated user.")
     @GetMapping("/{id}")
     fun findOrder(
         @PathVariable id: Long,
         @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String
-    ): EntityModel<*> {
-        val res: FindOrderResponseDTO = orderService.findOrder(id, token)
-        return findOrderAssembler.toModel(res)
+    ): OrderResponseDTO {
+        return orderService.findOrder(token, id)
     }
 
-    @Operation(summary = "Listar pedidos", description = "Retorna todos os pedidos do usuário, com filtros opcionais por status, usuário ou ID do pedido.")
+    @Operation(summary = "List orders", description = "Returns all orders of the authenticated user, optionally filtered by status or order ID.")
     @GetMapping
     fun listOrders(
         @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String,
-        @RequestParam status: OrderStatusDTO? = null,
-        @RequestParam userId: Long? = null,
+        @RequestParam status: OrderStatus? = null,
         @RequestParam orderId: Long? = null
-    ): EntityModel<*> {
-        val res: ListOrdersResponseDTO = orderService.listOrders(token, status, userId, orderId)
-        return listOrdersAssembler.toModel(res)
+    ): List<OrderResponseDTO> {
+        return orderService.listOrders(token, status, orderId = orderId)
     }
 
-    @Operation(summary = "Excluir pedido", description = "Remove um pedido específico do usuário.")
+    @Operation(summary = "Delete order", description = "Removes a specific order of the authenticated user.")
     @DeleteMapping("/{id}")
     fun deleteOrder(
         @PathVariable id: Long,
         @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String
-    ): ResponseEntity<Void> {
-        orderService.deleteOrder(id, token)
-        return ResponseEntity.noContent().build()
+    ) {
+        orderService.deleteOrder(token, id)
     }
 
     // ---------- CART ----------
 
-    @Operation(summary = "Ver carrinho do usuário", description = "Retorna o pedido que ainda não foi finalizado (carrinho).")
+    @Operation(summary = "Get user cart", description = "Returns the current order that has not been finalized (cart).")
     @GetMapping("/cart")
     fun findCart(
         @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String
-    ): EntityModel<*> {
-        val res: FindCartResponseDTO = orderService.findCart(token)
-        return findCartAssembler.toModel(res)
+    ): OrderResponseDTO {
+        return orderService.findCart(token)
     }
 
-    @Operation(summary = "Finalizar pedido (enviar)", description = "Finaliza o carrinho atual transformando-o em pedido.")
-    @PostMapping
+    @Operation(summary = "Finalize order (send)", description = "Finalizes the current cart, converting it into an order.")
+    @PostMapping("/{id}/send")
     fun sendOrder(
+        @PathVariable id: Long,
         @Parameter(hidden = true)
-        @RequestHeader("Authorization") token: String,
-        @RequestParam id: Long
-    ): EntityModel<*> {
-        val res: SendOrderResponseDTO = orderService.sendOrder(id, token)
-        return sendOrderAssembler.toModel(res)
+        @RequestHeader("Authorization") token: String
+    ): OrderResponseDTO {
+        return orderService.sendOrder(token, id)
     }
 }

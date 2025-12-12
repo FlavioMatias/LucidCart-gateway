@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { BASE_URL } from '../../../app.config';
-
+import { AddressResponseDTO } from '../address/address-service';
 // =====================================
-// MODELS (todos os DTO equivalentes aos Kotlin)
+// MODELS 
 // =====================================
 
 export type OrderStatusDTO =
@@ -14,13 +14,15 @@ export type OrderStatusDTO =
   | 'DELIVERED'
   | 'CANCELED';
 
-export interface ItemOrderDTO {
-  id: number | null;
+export interface ItemOrderResponseDTO {
+  id: number;
   productId: number;
   orderId: number;
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface ItemOrderRequestDTO {
@@ -29,48 +31,14 @@ export interface ItemOrderRequestDTO {
   unitPrice: number;
 }
 
-export interface AddressDTO {
-  id: number | null;
-  userId: number;
-  fullAddress: string;
-  latitude: number;
-  longitude: number;
-}
-
-export interface OrderDTO {
+export interface OrderResponseDTO {
   id: number;
   status: OrderStatusDTO;
   traceCode: string;
-  address: AddressDTO;
-  items: ItemOrderDTO[];
-}
-
-export interface OrderListDTO {
-  orders: OrderDTO[];
-}
-
-export interface AddItemResponseDTO {
-  item: ItemOrderDTO;
-}
-
-export interface UpdateItemResponseDTO {
-  item: ItemOrderDTO;
-}
-
-export interface SendOrderResponseDTO {
-  order: OrderDTO;
-}
-
-export interface FindOrderResponseDTO {
-  order: OrderDTO;
-}
-
-export interface ListOrdersResponseDTO {
-  orders: OrderDTO[];
-}
-
-export interface FindCartResponseDTO {
-  order: OrderDTO;
+  address: AddressResponseDTO;
+  createdAt: string | null;
+  updatedAt: string | null;
+  items: ItemOrderResponseDTO[];
 }
 
 // =====================================
@@ -84,46 +52,54 @@ export class OrdersService {
 
   constructor(private http: HttpClient) {}
 
-  // Avaliação dinâmica das URLs
-  private get ORDERS_URL() { return `${BASE_URL}/orders`; }
-  private get ITEMS_URL() { return `${this.ORDERS_URL}/items`; }
-
-  // ---------- ITEMS ----------
-  addItem(req: ItemOrderRequestDTO): Observable<AddItemResponseDTO> {
-    return this.http.post<AddItemResponseDTO>(this.ITEMS_URL, req);
+  private get ORDERS_URL() {
+    return `${BASE_URL}/orders`;
   }
 
-  updateItem(id: number, req: ItemOrderRequestDTO): Observable<UpdateItemResponseDTO> {
-    return this.http.put<UpdateItemResponseDTO>(`${this.ITEMS_URL}/${id}`, req);
+  private get ITEMS_URL() {
+    return `${this.ORDERS_URL}/items`;
+  }
+
+  // ----------------- ITEMS -----------------
+
+  addItem(req: ItemOrderRequestDTO): Observable<ItemOrderResponseDTO> {
+    return this.http.post<ItemOrderResponseDTO>(this.ITEMS_URL, req);
+  }
+
+  updateItem(id: number, req: ItemOrderRequestDTO): Observable<ItemOrderResponseDTO> {
+    return this.http.put<ItemOrderResponseDTO>(`${this.ITEMS_URL}/${id}`, req);
   }
 
   deleteItem(id: number): Observable<void> {
     return this.http.delete<void>(`${this.ITEMS_URL}/${id}`);
   }
 
-  // ---------- ORDERS ----------
-  findOrder(id: number): Observable<FindOrderResponseDTO> {
-    return this.http.get<FindOrderResponseDTO>(`${this.ORDERS_URL}/${id}`);
+  // ----------------- ORDERS -----------------
+
+  findOrder(id: number): Observable<OrderResponseDTO> {
+    return this.http.get<OrderResponseDTO>(`${this.ORDERS_URL}/${id}`);
   }
 
   listOrders(params?: {
     status?: OrderStatusDTO;
-    userId?: number;
     orderId?: number;
-  }): Observable<ListOrdersResponseDTO> {
-    return this.http.get<ListOrdersResponseDTO>(this.ORDERS_URL, { params: params as any });
+  }): Observable<OrderResponseDTO[]> {
+    return this.http.get<OrderResponseDTO[]>(this.ORDERS_URL, {
+      params: params as any
+    });
   }
 
   deleteOrder(id: number): Observable<void> {
     return this.http.delete<void>(`${this.ORDERS_URL}/${id}`);
   }
 
-  // ---------- CART ----------
-  findCart(): Observable<FindCartResponseDTO> {
-    return this.http.get<FindCartResponseDTO>(`${this.ORDERS_URL}/cart`);
+  // ----------------- CART -----------------
+
+  findCart(): Observable<OrderResponseDTO> {
+    return this.http.get<OrderResponseDTO>(`${this.ORDERS_URL}/cart`);
   }
 
-  sendOrder(order: OrderDTO): Observable<SendOrderResponseDTO> {
-    return this.http.post<SendOrderResponseDTO>(`${this.ORDERS_URL}?id=${order.id}`, {});
+  sendOrder(orderId: number): Observable<OrderResponseDTO> {
+    return this.http.post<OrderResponseDTO>(`${this.ORDERS_URL}/${orderId}/send`, {});
   }
 }

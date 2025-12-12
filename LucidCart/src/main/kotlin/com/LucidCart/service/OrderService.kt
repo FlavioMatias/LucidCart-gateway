@@ -1,8 +1,6 @@
 package com.LucidCart.service
 
 import com.LucidCart.gateway.order.*
-import com.LucidCart.gateway.order.OrderGateway
-import com.LucidCart.gateway.order.jabx.*
 import org.springframework.stereotype.Service
 
 @Service
@@ -13,102 +11,52 @@ class OrderService(
     // ============================================================
     // ADDRESS
     // ============================================================
+    fun createAddress(token: String, req: AddressRequestDTO): AddressResponseDTO =
+        gateway.createAddress(token, req)
 
-    fun createAddress(req: AddressRequestDTO, token: String): CreateAddressResponseDTO {
-        val jabxReq = CreateAddressRequest().apply { address = req.toJaxb() }
-        val resp = gateway.createAddress(token, jabxReq)
-        return CreateAddressResponseDTO.fromJaxb(resp)
-    }
+    fun updateAddress(token: String, req: AddressRequestDTO): AddressResponseDTO =
+        gateway.updateAddress(token, req)
 
-    fun updateAddress(req: AddressRequestDTO, token: String): UpdateAddressResponseDTO {
-        val jabxReq = UpdateAddressRequest().apply { address = req.toJaxb() }
-        val resp = gateway.updateAddress(token, jabxReq)
-        return UpdateAddressResponseDTO.fromJaxb(resp)
-    }
+    fun deleteAddress(token: String) =
+        gateway.deleteAddress(token)
 
-    fun deleteAddress(token: String): DeleteAddressResponse {
-        val req = DeleteAddressRequest()
-        return gateway.deleteAddress(token, req)
-    }
-
-    fun findAddress(token: String): FindAddressResponseDTO {
-        val req = FindAddressRequest().apply {}
-        val resp = gateway.findAddress(token, req)
-        return FindAddressResponseDTO.fromJaxb(resp)
-    }
+    fun findAddress(token: String): AddressResponseDTO =
+        gateway.findAddress(token)
 
     // ============================================================
     // ITEM
     // ============================================================
+    fun addItem(token: String, req: ItemOrderRequestDTO): ItemOrderResponseDTO =
+        gateway.addItem(token, req)
 
-    fun addItem(req: ItemOrderRequestDTO, token: String): AddItemResponseDTO {
-        val jabxReq = AddItemRequest().apply { item = req.toJaxb() }
-        val resp = gateway.addItem(token, jabxReq)
-        return AddItemResponseDTO.fromJaxb(resp)
-    }
+    fun updateItem(token: String, id: Long, req: ItemOrderRequestDTO): ItemOrderResponseDTO =
+        gateway.updateItem(token, id, req)
 
-    fun updateItem(id : Long,req: ItemOrderRequestDTO, token: String): UpdateItemResponseDTO {
-        val jabxReq = UpdateItemRequest().apply {
-            this.id = id
-            item = req.toJaxb()
-        }
-        val resp = gateway.updateItem(token, jabxReq)
-        return UpdateItemResponseDTO.fromJaxb(resp)
-    }
-
-    fun deleteItem(id: Long, token: String): DeleteItemResponse {
-        val req = DeleteItemRequest().apply {
-            this.id = id
-        }
-        return gateway.deleteItem(token, req)
-    }
+    fun deleteItem(token: String, id: Long) =
+        gateway.deleteItem(token, id)
 
     // ============================================================
     // ORDER
     // ============================================================
-
-    fun findOrder(id: Long, token: String): FindOrderResponseDTO {
-        val req = FindOrderRequest().apply {
-            this.id = id
-        }
-        val resp = gateway.findOrder(token, req)
-        return FindOrderResponseDTO.fromJaxb(resp)
-    }
+    fun findOrder(token: String, id: Long): OrderResponseDTO =
+        gateway.findOrder(token, id)
 
     fun listOrders(
         token: String,
-        status: OrderStatusDTO? = null,
-        userId: Long? = null,
+        status: OrderStatus? = null,
         orderId: Long? = null
-    ): ListOrdersResponseDTO {
-        val req = ListOrdersRequest().apply {
-            this.status = status?.let { OrderStatusDTO.toJaxb(it) }
-            this.userId = userId
-            this.orderId = orderId
-        }
-        val resp = gateway.listOrders(token, req)
-        return ListOrdersResponseDTO.fromJaxb(resp.orders)
-    }
+    ): List<OrderResponseDTO> =
+        gateway.listOrders(token, status, orderId)
 
-    fun deleteOrder(id: Long, token: String) {
-        val req = DeleteOrderRequest().apply {
-            this.id = id
-        }
-        gateway.deleteOrder(token, req)
-    }
+    fun deleteOrder(token: String, id: Long) =
+        gateway.deleteOrder(token, id)
 
     // ============================================================
     // CART
     // ============================================================
+    fun findCart(token: String): OrderResponseDTO =
+        gateway.findCart(token)
 
-    fun findCart(token: String): FindCartResponseDTO {
-        val req = FindCartRequest()
-        val resp = gateway.findCart(token, req)
-        return FindCartResponseDTO.fromJaxb(resp)
-    }
-    fun sendOrder(id: Long, token: String): SendOrderResponseDTO {
-        val req = SendOrderRequest().apply { this.id = id }
-        val resp = gateway.sendOrder(token, req)
-        return SendOrderResponseDTO.fromJaxb(resp)
-    }
+    fun sendOrder(token: String, id: Long): OrderResponseDTO =
+        gateway.sendOrder(token, id)
 }

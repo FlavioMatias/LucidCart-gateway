@@ -1,95 +1,86 @@
 package com.LucidCart.controller
 
-import com.LucidCart.controller.assemblers.*
 import com.LucidCart.gateway.order.AddressRequestDTO
+import com.LucidCart.gateway.order.AddressResponseDTO
 import com.LucidCart.service.OrderService
-import org.springframework.hateoas.EntityModel
-import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
 
-@Tag(name = "Address", description = "Gerenciamento de endereços de entrega")
+@Tag(name = "Address", description = "Delivery address management")
 @RestController
 @RequestMapping("/api/v1/address")
 class AddressController(
-    private val orderService: OrderService,
-    private val createAssembler: CreateAddressResponseAssembler,
-    private val updateAssembler: UpdateAddressResponseAssembler,
-    private val findAssembler: FindAddressResponseAssembler
+    private val orderService: OrderService
 ) {
 
-    @Operation(summary = "Criar endereço", description = "Cria um novo endereço de entrega para o usuário autenticado.")
+    @Operation(summary = "Create address", description = "Creates a new delivery address for the authenticated user.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Endereço criado com sucesso"),
-            ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+            ApiResponse(responseCode = "200", description = "Address created successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid data"),
+            ApiResponse(responseCode = "401", description = "Invalid or missing token")
         ]
     )
     @PostMapping
     fun createAddress(
-        @Parameter(description = "Token JWT do usuário", required = true)
+        @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String,
-        @Parameter(description = "Dados do endereço a ser criado", required = true)
         @RequestBody req: AddressRequestDTO
-    ): EntityModel<*> {
-        val res = orderService.createAddress(req, token)
-        return createAssembler.toModel(res)
+    ): AddressResponseDTO {
+        return orderService.createAddress(token, req)
     }
 
-    @Operation(summary = "Atualizar endereço", description = "Atualiza o endereço de entrega do usuário autenticado.")
+    @Operation(summary = "Update address", description = "Updates the delivery address of the authenticated user.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Endereço atualizado com sucesso"),
-            ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+            ApiResponse(responseCode = "200", description = "Address updated successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid data"),
+            ApiResponse(responseCode = "401", description = "Invalid or missing token")
         ]
     )
     @PutMapping
     fun updateAddress(
-        @Parameter(description = "Token JWT do usuário", required = true)
+        @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String,
-        @Parameter(description = "Dados do endereço a ser atualizado", required = true)
         @RequestBody req: AddressRequestDTO
-    ): EntityModel<*> {
-        val res = orderService.updateAddress(req, token)
-        return updateAssembler.toModel(res)
+    ): AddressResponseDTO {
+        return orderService.updateAddress(token, req)
     }
 
-    @Operation(summary = "Excluir endereço", description = "Exclui o endereço de entrega do usuário autenticado.")
+    @Operation(summary = "Delete address", description = "Deletes the delivery address of the authenticated user.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "204", description = "Endereço excluído com sucesso"),
-            ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+            ApiResponse(responseCode = "204", description = "Address deleted successfully"),
+            ApiResponse(responseCode = "401", description = "Invalid or missing token")
         ]
     )
     @DeleteMapping
     fun deleteAddress(
-        @Parameter(description = "Token JWT do usuário", required = true)
+        @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String
     ): ResponseEntity<Void> {
         orderService.deleteAddress(token)
         return ResponseEntity.noContent().build()
     }
 
-    @Operation(summary = "Buscar endereço", description = "Retorna o endereço de entrega do usuário autenticado.")
+    @Operation(summary = "Get address", description = "Returns the delivery address of the authenticated user.")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Endereço encontrado com sucesso"),
-            ApiResponse(responseCode = "404", description = "Endereço não encontrado"),
-            ApiResponse(responseCode = "401", description = "Token inválido ou ausente")
+            ApiResponse(responseCode = "200", description = "Address retrieved successfully"),
+            ApiResponse(responseCode = "404", description = "Address not found"),
+            ApiResponse(responseCode = "401", description = "Invalid or missing token")
         ]
     )
     @GetMapping
     fun findAddress(
-        @Parameter(description = "Token JWT do usuário", required = true)
+        @Parameter(hidden = true)
         @RequestHeader("Authorization") token: String
-    ): EntityModel<*> {
-        val res = orderService.findAddress(token)
-        return findAssembler.toModel(res)
+    ): AddressResponseDTO {
+        return orderService.findAddress(token)
     }
 }

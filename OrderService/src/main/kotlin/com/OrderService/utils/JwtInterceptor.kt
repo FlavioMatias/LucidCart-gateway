@@ -1,63 +1,58 @@
 package com.OrderService.utils
 
 import com.OrderService.service.JwtService
-import org.springframework.stereotype.Component
-import org.springframework.ws.context.MessageContext
-import org.springframework.ws.server.EndpointInterceptor
-import org.springframework.ws.soap.SoapHeader
-import org.springframework.ws.soap.SoapMessage
+import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
-import org.springframework.web.context.request.RequestContextHolder
-import org.springframework.web.context.request.ServletRequestAttributes
-
-data class UserContext(val userId: Long)
-
-object SecurityContextHolder {
-    private val context = ThreadLocal<UserContext>()
-    fun setContext(userContext: UserContext) = context.set(userContext)
-    fun getContext(): UserContext = context.get() ?: throw RuntimeException("User not authenticated")
-    fun clear() = context.remove()
-}
+import jakarta.servlet.http.HttpServletResponse
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.stereotype.Component
+import org.springframework.web.filter.OncePerRequestFilter
 
 @Component
-class JwtInterceptor(
+class JwtFilter(
     private val jwtService: JwtService
-) : EndpointInterceptor {
+) : OncePerRequestFilter() {
 
-    override fun handleRequest(request: MessageContext, endpoint: Any): Boolean {
-        val soapMessage = request.request as? SoapMessage
-            ?: throw RuntimeException("Expected SOAP message")
+    override fun doFilterInternal(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        chain: FilterChain
+    ) {
 
-        val soapHeader: SoapHeader? = soapMessage.soapHeader
+            val path = request.requestURI
 
-        // Tenta pegar do SOAP Header
-        var authHeader: String? = soapHeader?.examineAllHeaderElements()
-            ?.asSequence()
-            ?.firstOrNull { it.name.localPart == "Authorization" }
-            ?.text
+            // Bypass para Swagger, docs e login
+            if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/login")) {
+                chain.doFilter(request, response)
+                return
+            }
 
-        // Se não tiver no SOAP Header, tenta pegar do HTTP Header
-        if (authHeader.isNullOrEmpty()) {
-            val servletRequest = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request
-            authHeader = servletRequest?.getHeader("Authorization")
-        }
+            val authHeader = request.getHeader("Authorization")
+            if (authHeader.isNullOrBlank()) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authorization header missing")
+                return
+            }
 
-        if (authHeader.isNullOrEmpty()) {
-            throw RuntimeException("Authorization header missing")
-        }
+            val userId = try {
+                jwtService.validateAndGetUserId(authHeader)
+            } catch (ex: Exception) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token")
+                return
+            }
 
-        // Valida token e pega userId
-        val userId = jwtService.validateAndGetUserId(authHeader)
-            ?: throw RuntimeException("Invalid or expired token")
+            if (userId == null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token")
+                return
+            }
 
-        SecurityContextHolder.setContext(UserContext(userId))
-        return true
-    }
+            // Popula o Spring Security context
+            val authorities = listOf(SimpleGrantedAuthority("ROLE_USER"))
+            val authentication = UsernamePasswordAuthenticationToken(userId, null, authorities)
+            SecurityContextHolder.getContext().authentication = authentication
 
-    override fun handleResponse(request: MessageContext?, endpoint: Any?) = true
-    override fun handleFault(request: MessageContext?, endpoint: Any?) = true
+            chain.doFilter(request, response)
 
-    override fun afterCompletion(messageContext: MessageContext?, endpoint: Any?, ex: Exception?) {
-        SecurityContextHolder.clear()
     }
 }

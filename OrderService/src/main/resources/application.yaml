@@ -2,8 +2,12 @@ spring:
   application:
     name: OrderService
 
-  webservices:
-    path: /ws
+  rabbitmq:
+    host: rabbitmq        # nome do container no docker-compose
+    port: 5672
+    username: admin
+    password: admin
+    virtual-host: /
 
   datasource:
     url: jdbc:h2:mem:ordersdb
@@ -23,12 +27,15 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        format_sql: true
-        show_sql: true
+        format_sql: false
+        show_sql: false
         dialect: org.hibernate.dialect.H2Dialect
 
 server:
   port: 8082
+  tomcat:
+    accesslog:
+      enabled=false:
 
 jwt:
   public-key: |
@@ -41,3 +48,20 @@ jwt:
     pUGgH7bhxr4dIAJIakc/Ti5FPNlILmi/BVL2jNICTwlvGJXBg8CuzkVlB+27fvdc
     1QIDAQAB
     -----END PUBLIC KEY-----
+
+logging:
+  level:
+    root: WARN
+
+    org.springframework.boot.web.embedded.tomcat: INFO
+    org.apache.catalina.startup: INFO
+    org.hibernate.SQL: ERROR
+    org.hibernate.orm.jdbc.bind: ERROR
+    org.hibernate.type.descriptor.sql: ERROR
+    org.hibernate.engine: ERROR
+    org.hibernate.stat: ERROR
+    org.hibernate.tool.hbm2ddl: ERROR
+    org.springframework.jdbc.core: ERROR
+    org.springframework.orm.jpa: ERROR
+
+    com.zaxxer.hikari: ERROR

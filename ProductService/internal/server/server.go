@@ -20,10 +20,14 @@ func NewServer() *Server {
 	service := product.NewService(repo)
 	handler := product.NewHandler(service)
 	wsHandler := product.NewProductWS(service)
+
+
 	publicKey, err := config.LoadPublicKey("internal/config/public.pem")
 	if err != nil {
 		log.Fatalf("erro ao carregar public.pem: %v", err)
 	}
+
+	go product.StartOrderConsumer(service)
 
 	router := httpRouter.NewRouter(handler, wsHandler, publicKey)
 
